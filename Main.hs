@@ -20,20 +20,36 @@ import qualified Yi.Keymap.Vim.Ex.Commands.Common as V
 import qualified Yi.Keymap.Vim.Utils as V
 import qualified Yi.Rope as R
 import Yi.Config.Default.Pango (configurePango)
+
 import Numeric (readHex)
 import qualified Data.List as List (splitAt)
+import Data.Time (getCurrentTime, utcToZonedTime, getCurrentTimeZone, TimeOfDay(..), localTimeOfDay, zonedTimeToLocalTime)
 
 main :: IO ()
 main = do
     files <- getArgs
+    isLate <- isLate
     let openFileActions = intersperse (EditorA newTabE) (map (YiA . openNewFile) files)
     cfg <- execStateT
         (runConfigM (myConfig >> (startActionsA .= openFileActions)))
-        defaultConfig { configUI = myUIConfig }
+        defaultConfig { configUI = myUIConfig isLate }
     startEditor cfg Nothing
 
-myUIConfig :: UIConfig
-myUIConfig = UIConfig { configFontName = Nothing
+-- | Decides whether it is "late" right now.
+-- If it's after 6:30pm, it's "late"
+isLate :: IO Bool
+isLate = let sunset = TimeOfDay 18 30 0
+         in
+             do nowUTC <- getCurrentTime
+                timeZone <- getCurrentTimeZone
+                let now = localTimeOfDay
+                        $ zonedTimeToLocalTime
+                        $ utcToZonedTime timeZone nowUTC
+                return (now >= sunset)
+
+
+myUIConfig :: Bool -> UIConfig
+myUIConfig isLate = UIConfig { configFontName = Nothing
                       , configFontSize = Just 12
                       , configScrollStyle = Just SingleLine
                       , configScrollWheelAmount = 2
@@ -43,7 +59,7 @@ myUIConfig = UIConfig { configFontName = Nothing
                       , configLineWrap = True
                       , configCursorStyle = AlwaysFat
                       , configWindowFill = '~'
-                      , configTheme = solarizedTheme Light
+                      , configTheme = solarizedTheme (if isLate then Dark else Light)
                       }
 
 myConfig :: ConfigM ()

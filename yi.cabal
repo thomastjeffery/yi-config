@@ -21,6 +21,7 @@ executable yi
       base >= 4.8 && < 5
     , microlens-platform
     , mtl
+    , time
     , yi-core >= 0.14
     , yi-frontend-pango >= 0.14
     , yi-keymap-vim >= 0.14
