@@ -37,15 +37,17 @@ main = do
 
 -- | Decides whether it is "late" right now.
 -- If it's after 6:30pm, it's "late"
+-- If it's before 8:00am, it's "late"
 isLate :: IO Bool
 isLate = let sunset = TimeOfDay 18 30 0
+             dawn   = TimeOfDay 8 0 0
          in
              do nowUTC <- getCurrentTime
                 timeZone <- getCurrentTimeZone
                 let now = localTimeOfDay
                         $ zonedTimeToLocalTime
                         $ utcToZonedTime timeZone nowUTC
-                return (now >= sunset)
+                return (now > sunset && now > dawn)
 
 
 myUIConfig :: Bool -> UIConfig
